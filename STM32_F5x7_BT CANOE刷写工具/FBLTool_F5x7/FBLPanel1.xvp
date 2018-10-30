@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<Panel Type="Vector.CANalyzer.Panels.PanelSerializer, Vector.CANalyzer.Panels.Serializer, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null">
+  <Object Type="Vector.CANalyzer.Panels.Runtime.Panel, Vector.CANalyzer.Panels.Common, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="Panel" Children="Controls" ControlName="FBLPanel1">
+    <Object Type="Vector.CANalyzer.Panels.Design.VectorTabControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="VectorTabControl1" Children="Controls" ControlName="Tab Control">
+      <Object Type="Vector.CANalyzer.Panels.Design.VectorTabPage, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="VectorTabPage1" Children="Controls" ControlName="">
+        <Object Type="Vector.CANalyzer.Panels.Design.StaticTextControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="StaticTextControl1" Children="Controls" ControlName="Static Text">
+          <Property Name="Name">StaticTextControl1</Property>
+          <Property Name="Size">328, 40</Property>
+          <Property Name="Location">190, 13</Property>
+          <Property Name="Font">Arial, 22pt, style=Bold</Property>
+          <Property Name="TextAlign">MiddleCenter</Property>
+          <Property Name="BorderStyle">Fixed3D</Property>
+          <Property Name="Text">Flash Bootloader Tool</Property>
+          <Property Name="ForeColor">Desktop</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.PictureBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="PictureBoxControl1" ControlName="Picture Box">
+          <Property Name="Name">PictureBoxControl1</Property>
+          <Property Name="Size">98, 53</Property>
+          <Property Name="Location">6, 6</Property>
+          <Property Name="ImageFile">gdlg.png</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="GroupBoxControl1" Children="Controls" ControlName="Group Box">
+          <Object Type="Vector.CANalyzer.Panels.Design.PathControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="PathControl2" Children="Controls" ControlName="Path Dialog 2">
+            <Property Name="Name">PathControl2</Property>
+            <Property Name="Size">522, 23</Property>
+            <Property Name="Location">6, 91</Property>
+            <Property Name="FileDlgFilter">All Files|*.hex*</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_DataFile0;4;;;-1</Property>
+            <Property Name="TabIndex">8</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.PathControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="PathControl1" Children="Controls" ControlName="Path Dialog">
+            <Property Name="Name">PathControl1</Property>
+            <Property Name="Size">522, 23</Property>
+            <Property Name="Location">6, 52</Property>
+            <Property Name="FileDlgFilter">All Files|*.hex*</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_DrvFile0;4;;;-1</Property>
+            <Property Name="TabIndex">7</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.CheckBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="CheckBoxControl2" Children="Controls" ControlName="Check Box 2">
+            <Property Name="Name">CheckBoxControl2</Property>
+            <Property Name="Size">66, 17</Property>
+            <Property Name="Location">540, 56</Property>
+            <Property Name="Text">DrvFile</Property>
+            <Property Name="ForeColor">HotTrack</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_CheckDrvFile0;1;;;-1</Property>
+            <Property Name="TabIndex">4</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.CheckBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="CheckBoxControl3" Children="Controls" ControlName="Check Box 3">
+            <Property Name="Name">CheckBoxControl3</Property>
+            <Property Name="Size">66, 17</Property>
+            <Property Name="Location">540, 95</Property>
+            <Property Name="Text">AppFile</Property>
+            <Property Name="ForeColor">HotTrack</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_CheckDataFile0;1;;;-1</Property>
+            <Property Name="TabIndex">5</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.ProgressBarControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="ProgressBarControl1" Children="Controls" ControlName="Progress Bar">
+            <Property Name="Name">ProgressBarControl1</Property>
+            <Property Name="Size">593, 26</Property>
+            <Property Name="Location">6, 19</Property>
+            <Property Name="ValueForeColor">GrayText</Property>
+            <Property Name="OriginValue">0</Property>
+            <Property Name="ValuePos">Bottom</Property>
+            <Property Name="DecimalPlaces">0</Property>
+            <Property Name="ValueSize">593, 13</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;evVar_Progress_Bar;1;;;-1</Property>
+          </Object>
+          <Property Name="Name">GroupBoxControl1</Property>
+          <Property Name="Size">611, 125</Property>
+          <Property Name="Location">0, 73</Property>
+          <Property Name="Font">SimSun, 9pt, style=Strikeout</Property>
+          <Property Name="Text">
+          </Property>
+          <Property Name="TabIndex">22</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="GroupBoxControl2" Children="Controls" ControlName="Group Box 2">
+          <Object Type="Vector.CANalyzer.Panels.Design.ButtonControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="ButtonControl1" Children="Controls" ControlName="Button">
+            <Property Name="Name">ButtonControl1</Property>
+            <Property Name="Size">50, 32</Property>
+            <Property Name="Location">552, 22</Property>
+            <Property Name="Text">Start</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_StartButten;1;;;-1</Property>
+            <Property Name="TabIndex">6</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.LCDControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="LCDControl1" ControlName="LCD Control">
+            <Property Name="Name">LCDControl1</Property>
+            <Property Name="Size">107, 35</Property>
+            <Property Name="Location">496, 75</Property>
+            <Property Name="NumberIntDigits">2</Property>
+            <Property Name="DecimalPlaces">2</Property>
+            <Property Name="BackColor">Control</Property>
+            <Property Name="ColorOn">Black</Property>
+            <Property Name="ColorOff">Control</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;evVar_Lcd;1;;;-1</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.CAPLOutputViewControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="CAPLOutputViewControl1" Children="Controls" ControlName="FBLInfo">
+            <Property Name="Name">CAPLOutputViewControl1</Property>
+            <Property Name="Size">472, 100</Property>
+            <Property Name="Location">6, 16</Property>
+            <Property Name="BoxBackgroundColor">ControlLightLight</Property>
+            <Property Name="TabIndex">15</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.ButtonControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="ButtonControl2" Children="Controls" ControlName="Button 2">
+            <Property Name="Name">ButtonControl2</Property>
+            <Property Name="Size">50, 32</Property>
+            <Property Name="Location">496, 22</Property>
+            <Property Name="Text">Stop</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_StopButten;1;;;-1</Property>
+            <Property Name="TabIndex">8</Property>
+          </Object>
+          <Property Name="Name">GroupBoxControl2</Property>
+          <Property Name="Size">611, 125</Property>
+          <Property Name="Location">0, 203</Property>
+          <Property Name="Text">
+          </Property>
+          <Property Name="TabIndex">23</Property>
+        </Object>
+        <Property Name="Name">VectorTabPage1</Property>
+        <Property Name="Size">612, 329</Property>
+        <Property Name="Location">4, 24</Property>
+        <Property Name="BackColor">Control</Property>
+        <Property Name="Text">ControlTab1</Property>
+      </Object>
+      <Object Type="Vector.CANalyzer.Panels.Design.VectorTabPage, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="VectorTabPage2" Children="Controls" ControlName="">
+        <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="GroupBoxControl4" Children="Controls" ControlName="Group Box 4">
+          <Object Type="Vector.CANalyzer.Panels.Design.ButtonControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="ButtonControl4" Children="Controls" ControlName="Button 3">
+            <Property Name="Name">ButtonControl4</Property>
+            <Property Name="Size">85, 27</Property>
+            <Property Name="Location">517, 54</Property>
+            <Property Name="Text">GetLocalTime</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_GetLocalTimeButton;1;;;-1</Property>
+            <Property Name="TabIndex">2</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.HexEditorControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="HexEditorControl2" Children="Controls" ControlName="Hex/Text Editor 2">
+            <Property Name="Name">HexEditorControl2</Property>
+            <Property Name="Size">505, 23</Property>
+            <Property Name="Location">6, 58</Property>
+            <Property Name="Font">Courier New, 8.139131pt</Property>
+            <Property Name="SymbolDataType">ByteArray</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_FingerPrintInfo;8;;;-1</Property>
+            <Property Name="TabIndex">1</Property>
+          </Object>
+          <Property Name="Name">GroupBoxControl4</Property>
+          <Property Name="Size">611, 125</Property>
+          <Property Name="Location">0, 203</Property>
+          <Property Name="Text">FingerPrintInput</Property>
+          <Property Name="TabIndex">7</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.GroupBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="GroupBoxControl3" Children="Controls" ControlName="Group Box 3">
+          <Object Type="Vector.CANalyzer.Panels.Design.PathControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="PathControl3" Children="Controls" ControlName="Path Dialog">
+            <Property Name="Name">PathControl3</Property>
+            <Property Name="Size">596, 23</Property>
+            <Property Name="Location">6, 37</Property>
+            <Property Name="FileDlgFilter">All Files|*.hex*</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_FileCrcCal;4;;;-1</Property>
+            <Property Name="TabIndex">2</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.ButtonControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="ButtonControl3" Children="Controls" ControlName="Button">
+            <Property Name="Name">ButtonControl3</Property>
+            <Property Name="Size">82, 27</Property>
+            <Property Name="Location">520, 79</Property>
+            <Property Name="Text">Calculate</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_CalculateCrcButton;1;;;-1</Property>
+            <Property Name="TabIndex">4</Property>
+          </Object>
+          <Object Type="Vector.CANalyzer.Panels.Design.HexEditorControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="HexEditorControl1" Children="Controls" ControlName="Hex/Text Editor">
+            <Property Name="Name">HexEditorControl1</Property>
+            <Property Name="Size">505, 22</Property>
+            <Property Name="Location">6, 82</Property>
+            <Property Name="Font">Courier New, 8.139131pt</Property>
+            <Property Name="SymbolDataType">ByteArray</Property>
+            <Property Name="SymbolConfiguration">4;1;FBLdatabase;;;enVar_OutpputCRC;8;;;-1</Property>
+            <Property Name="TabIndex">5</Property>
+          </Object>
+          <Property Name="Name">GroupBoxControl3</Property>
+          <Property Name="Size">611, 125</Property>
+          <Property Name="Location">0, 73</Property>
+          <Property Name="Text">Hex File CRC</Property>
+          <Property Name="TabIndex">6</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.StaticTextControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="StaticTextControl2" Children="Controls" ControlName="Static Text">
+          <Property Name="Name">StaticTextControl2</Property>
+          <Property Name="Size">328, 40</Property>
+          <Property Name="Location">190, 13</Property>
+          <Property Name="Font">Arial, 22pt, style=Bold</Property>
+          <Property Name="TextAlign">MiddleCenter</Property>
+          <Property Name="BorderStyle">Fixed3D</Property>
+          <Property Name="Text">Flash Bootloader Tool</Property>
+          <Property Name="ForeColor">Desktop</Property>
+        </Object>
+        <Object Type="Vector.CANalyzer.Panels.Design.PictureBoxControl, Vector.CANalyzer.Panels.CommonControls, Version=8.1.32.0, Culture=neutral, PublicKeyToken=null" Name="PictureBoxControl2" ControlName="Picture Box">
+          <Property Name="Name">PictureBoxControl2</Property>
+          <Property Name="Size">98, 53</Property>
+          <Property Name="Location">6, 6</Property>
+          <Property Name="ImageFile">gdlg.png</Property>
+        </Object>
+        <Property Name="Name">VectorTabPage2</Property>
+        <Property Name="Size">612, 329</Property>
+        <Property Name="Location">4, 24</Property>
+        <Property Name="BackColor">Control</Property>
+        <Property Name="Text">ControlTab2</Property>
+      </Object>
+      <Property Name="Name">VectorTabControl1</Property>
+      <Property Name="Size">620, 357</Property>
+      <Property Name="Location">0, 0</Property>
+      <Property Name="SymbolConfiguration">
+      </Property>
+      <Property Name="TabIndex">0</Property>
+    </Object>
+    <Property Name="Name">Panel</Property>
+    <Property Name="Size">620, 357</Property>
+  </Object>
+</Panel>

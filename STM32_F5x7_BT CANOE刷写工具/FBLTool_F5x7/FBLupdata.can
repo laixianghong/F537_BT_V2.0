@@ -1,0 +1,2680 @@
+includes
+{
+  #pragma library("..\FBLTool_F5x7\capldll.dll")
+}
+
+variables
+{
+  message 0x7df tpmsg;
+  mstimer DownLoadFile;
+  mstimer MainTaskTick;
+  mstimer DiagTP;
+  mstimer TimeOutMonit;
+  word INVALIDVAULE = 0xFFFF;
+  /*counter*/
+  word WaitRespTimeoutCounter = 0;
+  word SecurityAccessDelayCounter = 0;
+
+  //word CalculateCrcButtenTime = 0;
+  //word StartButtenclikTime = 0;
+  //word StopButtenclikTime = 0;
+  
+  word ButtenClickedTime = 0;
+  
+  word gVardatafile0Active = 0; 
+  word gVardatafile1Active = 0;
+  byte gVarDatBuffRX[4096];
+  byte gVarDatBuffTX[4096];
+  byte gVarKeyBuffTX[8];
+  byte gVarReadFileBuffer[1024];
+  word gVarStartIndex;
+  word gVarEndIndex;
+
+  const dword gVarDiagRespID = 0x789;
+  const dword gVarDiagPhyReqID = 0x709;
+  const dword gVarDiagFunReqID = 0x7df;
+  //word gDiagTxIDFlag = 0;//0: 物理  1：功能
+  word gSuppressPosRspBit = 0;
+  const word FBL_STATE_UNSTART = 1;
+  const word FBL_STATE_START = 2;
+  const word NUMBER_OF_DRV_FILES = 1;
+  const word DRIVER_FILE0_INDEX = 0;
+  
+  const word NUMBER_OF_DAT_FILES = 2;
+  const word DATA_FILE0_INDEX = 0;
+  const word DATA_FILE1_INDEX = 1;
+  
+
+  /*File Information*/
+  char gVarDrvFilePath[NUMBER_OF_DRV_FILES][512];
+  char gVarDatFilePath[NUMBER_OF_DAT_FILES][512];
+
+  char gVarDrvFileName[NUMBER_OF_DRV_FILES][64];
+  char gVarDatFileName[NUMBER_OF_DAT_FILES][64];
+  dword  gVarDrvFileHandle[NUMBER_OF_DRV_FILES];
+  dword  gVarDatFileHandle[NUMBER_OF_DAT_FILES];
+
+  dword gVarDrvFileSegNum[NUMBER_OF_DRV_FILES];
+  dword gVarDatFileSegNum[NUMBER_OF_DAT_FILES];
+  dword  gVarDrvFileSegAddr[NUMBER_OF_DRV_FILES][64];
+  dword  gVarDatFileSegAddr[NUMBER_OF_DAT_FILES][64];
+  dword  gVarDrvFileSegSize[NUMBER_OF_DRV_FILES][64];
+  dword  gVarDatFileSegSize[NUMBER_OF_DAT_FILES][64];
+  dword  gVarCurrFileSegSize[64];
+
+  dword  gVarCurrFileIndex;
+  dword  gVarCurrFileType;
+  dword  gVarCurrFileSegIndex;
+
+  const word   DOWNLOADSEQUENCEDEEP = 8;
+  const word   DOWNLOAD_DATA = 76;
+  const word   DOWNLOAD_DRV =  346;
+  const word   DOWNLOAD_NOTHING = 0;
+  word   gVarDownLoadSequence[DOWNLOADSEQUENCEDEEP];
+  word   gVarDownLoadFileIndex[DOWNLOADSEQUENCEDEEP]; 
+
+
+  //dword  gVarFileMapDrv2Dat[NUMBER_OF_DRV_FILES];
+  //word  gVarFileMapDat2Drv[NUMBER_OF_DAT_FILES];
+  //word  gVarDataFileDownLoadFlag[NUMBER_OF_DAT_FILES];/*0:Invalid  1:downloading  2:download ok  3:download error*/
+  const word DataFileDownLoadInvalid = 0;
+  const word DataFileDownLoadOK = 1;
+  const word DataFileDownLoading = 2;
+  const word DataFileDownLoadErr = 3;
+
+  word gVarFBLSt;
+
+  /*DownLoadState*/ 
+  const word DLS_Idle = 0;//DownLoadState  DLS
+  const word SendReq_EnterExtendedSession = 1;
+  const word SendReq_SecurityReqSeed_LevelApp = 50;//DFXK
+  //const word WaitRes_SecurityReqSeed_LevelApp = 51;
+  const word SendReq_SecuritySendKey_LevelApp = 52;//DFXK
+  //const word WaitRes_SecuritySendKey_LevelApp = 53;
+  const word SendReq_SecurityReqSeed_LevelBT = 54;
+  const word SendReq_SecuritySendKey_LevelBT = 55;//
+  
+  const word SendReq_ReadDID_0xF189 = 100;
+  //const word WaitRes_ReadDID_0xF189 = 101;
+  const word SendReq_ReadDID_0xF187 = 102;
+  //const word WaitRes_ReadDID_0xF187 = 103;
+  const word SendReq_CheckPreCondication = 104;
+  //const word WaitRes_CheckPreCondication = 105;
+  
+  //const word WaitRes_EnterExtendedSession = 2;
+  const word SendReq_EnterProgrammingSession = 3;
+  //const word WaitRes_EnterProgrammingSession = 4;
+  const word SendReq_StopDtcSetting = 5; 
+  //const word WaitRes_StopDtcSetting = 6; 
+  const word SendReq_DisableCommunication = 7;
+  //const word WaitRes_DisableCommunication = 8;
+  const word SecurityAccessDelay = 9;
+  //const word WaitRes_SecurityAccessSeed = 10;
+  //const word SendReq_SecurityAccessKey = 11;
+  //const word WaitRes_SecurityAccessKey = 12;
+  const word SendReq_WriteFingerprint = 13;
+  //const word WaitRes_WriteFingerprint = 14;
+  const word FileDownLoading = 15;
+  const word DownLoadDriverFile = 16; 
+  const word DetermineDownLoadFile = 17;
+  const word SendReq_EraseMemory = 18;
+  //const word WaitRes_EraseMemory = 19;
+  const word SendReq_CheckCompatibility = 20;
+  //const word WaitRes_CheckCompatibility = 21;
+  const word SendReq_ECUReset = 22;
+  //const word WaitRes_ECUReset = 23;
+
+  word WaitDataTxConf = 0;
+  //word WaitRespRxIndi = 0; 
+
+  word DownLoadState;
+  word gVar_NextState;
+  const word RESOPNSE_OK = 0;
+  const word RESOPNSE_ERR = 1;
+  const word RESOPNSE_PENDING = 2;
+  const word RESOPNSE_CHECKSUM_ERR = 3;
+  const word RESOPNSE_APP_INCOMPLETE = 4;
+  const word RESOPNSE_APP_INVALID = 5;
+  const word RESOPNSE_SecNotExpire = 6;
+  
+  const word REQUEST_OK = 0;
+  const word REQUEST_ERR = 1;
+  const word REQUEST_PENDING = 2;
+
+
+  const byte SID_SesCtr = 0x10;
+  //const byte SUBID_SesCtr = 0x10; 
+
+  word DownLoadSubSt;
+  const word DownLoadSubReqDownload = 0;
+  const word DownLoadSubTransData = 1;
+  const word DownLoadSubRequestExit = 2;
+  const word DownLoadSubSendCheckDriver = 3;//DFXK: 31 01 02 02 
+             
+  dword gVarMaxNumberOfBlock;
+
+  byte gVarFileLineDataBuff[128];
+  dword gVarSegSizeRead;
+  byte gVarTransDataSN;
+  //word currentFileDownLoadOver;tbd
+  const word P2client = 50;
+  const word P2StarClient = 5000;
+  const word SECURITYDELAY = 1000;//ms
+  const word MainSchTick = 20;//ms
+  long gVarSecurityDelayleft = 0;
+  //const word CRCInitValue = 0xFFFF; no used
+  const dword CRC_32_INIT = 0xFFFFFFFF;
+  const dword CRC_32_XOROT = 0xffffffff;
+  float totlesize;
+  float downsize;
+
+  dword ExtendAddr;
+  //word CrcValue; no use
+  dword CRC_32_Value;
+  long tm[9];
+  float second;
+  float minit;
+
+  word FilePathDeep; 
+  char FileInfoTemp[512];
+  char FilePathTemp[512];
+  char FileNameTemp[64];
+  const word LINECHARNUM = 256;
+  //char gLineChar[LINECHARNUM]; no use ?
+  word gVar_waitTimout = 0;
+  word gVar_TxLength = 0;
+  word NumOfdatafile;
+  dword SegAddr[64];
+  dword SegLen[64];
+  //const word Crc32Table[256];
+  dword Crc32Table[256];
+  //const dword CRC32INIT = 0xffffffff;
+  //const dword CRC32XOROT = 0xffffffff;
+  
+  char InifileData0[256]="DataFile0.ini";
+  char InifileDriver0[256]="DriverFile0.ini";
+  char InifileCrcCal[256]="CrcCalFile.ini";
+
+  
+  dword IniFileHandle;
+  char  IniFilePath[1024];
+  const byte  AppFingerPrintLen = 10;
+  byte  AppDataFinger[AppFingerPrintLen];
+  
+  //byte gBufferGet[10];
+  //byte gBufferPut[10] = { 9, 8, 7, 55, 66, 77, 0, 0, 0, 0};
+
+  DWORD gHandle;
+  //dword cbkcount = 0;
+  
+  word gVarReadDID = 0;
+ } 
+
+on preStart
+{
+  gHandle = registerCAPLDLL();
+  OSEKTL_SetCAN(1);
+}
+
+
+on timer MainTaskTick
+{
+  MainDownLoadMananger();
+  //write("20180711");
+}
+
+on timer TimeOutMonit
+{
+  if(FBL_STATE_START != gVarFBLSt)
+  {
+    return;
+  }
+  if(gVar_waitTimout ==1)
+  {
+    gVar_waitTimout = 0;
+    EnterNextState(gVar_NextState);
+    if(gVar_NextState == SecurityAccessDelay)
+    {//10 82的时候才会走此分支
+      SecurityAccessDelayCounter = 0;
+      gVarSecurityDelayleft = SECURITYDELAY/1000;
+      putValueToControl("FBLPanel1","FBLInfo","Security access delay ,please wait...");
+      putValueToControl("FBLPanel1","FBLInfo",gVarSecurityDelayleft);
+      putValueToControl("FBLPanel1","FBLInfo","\n");
+      setTimerCyclic(MainTaskTick,20,20);
+    }
+    else
+    {
+      SetTimer(MainTaskTick,20);
+    }
+  }
+  else
+  {
+    FBLStop();
+    putValueToControl("FBLPanel1","FBLInfo","Failed,Response Timeout\n");
+  }
+}
+
+on timer DownLoadFile
+{
+  dword size;
+  word i;
+  word index;
+  dword addrtmp,sizetmp;
+  byte b1;
+  
+  switch(DownLoadSubSt)
+  {
+    case DownLoadSubReqDownload:
+      if(gVarCurrFileType == DOWNLOAD_DATA)
+      { 
+        putValueToControl("FBLPanel1","FBLInfo","App file downloading ...\n");
+        DiagRequest_RequestDownload(gVarDatFileSegAddr[gVarCurrFileIndex][gVarCurrFileSegIndex],gVarDatFileSegSize[gVarCurrFileIndex][gVarCurrFileSegIndex]);
+      }
+      else if(gVarCurrFileType == DOWNLOAD_DRV)
+      {
+        putValueToControl("FBLPanel1","FBLInfo","Flash driver file downloading ...\n");
+        DiagRequest_RequestDownload(gVarDrvFileSegAddr[gVarCurrFileIndex][gVarCurrFileSegIndex],gVarDrvFileSegSize[gVarCurrFileIndex][gVarCurrFileSegIndex]);
+      }
+      else
+      {
+        
+      }
+      gVarStartIndex = 0;
+      gVarEndIndex = 0;
+      gVarTransDataSN = 0;
+      gVarSegSizeRead = 0;
+      
+      CRC_32_Value = CRC_32_INIT;
+      
+    break;
+      
+    case DownLoadSubTransData:
+
+      if(gVarCurrFileType == DOWNLOAD_DATA)
+      {
+        gVarEndIndex = gVarSegSizeRead;
+        gVarTransDataSN++;
+        
+        if((gVarSegSizeRead + gVarCurrFileSegSize[gVarCurrFileSegIndex])>gVarMaxNumberOfBlock)
+        {
+          while(gVarSegSizeRead<gVarMaxNumberOfBlock)
+          { 
+            size = dllReadHexFileUserData(gHandle,gVarDatFileHandle[gVarCurrFileIndex],gVarFileLineDataBuff);
+            if(0xFFFFFFFF == size)
+            {
+              /*write Error Info*/
+              break;
+            }
+            gVarSegSizeRead = gVarSegSizeRead+size;
+            gVarCurrFileSegSize[gVarCurrFileSegIndex] -= size;
+            for(i = 0;i<size;i++)
+            {
+              gVarReadFileBuffer[gVarEndIndex] = gVarFileLineDataBuff[i];
+              gVarEndIndex++;
+            }
+          }
+
+          
+          DiagRequest_TransData(gVarReadFileBuffer,gVarMaxNumberOfBlock);
+          
+          gVarSegSizeRead = gVarSegSizeRead - gVarMaxNumberOfBlock;
+          
+          if(gVarSegSizeRead>0)
+          {
+            for(i = 0;i<gVarSegSizeRead;i++)
+            {  
+              gVarReadFileBuffer[i] = gVarReadFileBuffer[gVarMaxNumberOfBlock+i]; 
+            }
+          }
+        }
+        else
+        {
+          while(gVarCurrFileSegSize[gVarCurrFileSegIndex] != 0)
+          {
+            size = dllReadHexFileUserData(gHandle,gVarDatFileHandle[gVarCurrFileIndex],gVarFileLineDataBuff);
+            if(0xFFFFFFFF == size)
+            {
+              /*write Error Info*/
+              break;
+            }
+            gVarSegSizeRead = gVarSegSizeRead+size;
+            gVarCurrFileSegSize[gVarCurrFileSegIndex] -= size;
+            for(i = 0;i<size;i++)
+            {
+              gVarReadFileBuffer[gVarEndIndex] = gVarFileLineDataBuff[i];
+              gVarEndIndex++;
+            }
+          }
+          DiagRequest_TransData(gVarReadFileBuffer,gVarSegSizeRead);
+        }
+      }
+      if(gVarCurrFileType == DOWNLOAD_DRV)
+      {
+        //Diag_RequestDownload_Req(gVarDrvFileSegAddr[gVarCurrFileIndex][gVarCurrFileSegIndex],gVarDrvFileSegSize[gVarCurrFileIndex][gVarCurrFileSegIndex];
+        gVarEndIndex = gVarSegSizeRead;
+        gVarTransDataSN++;
+        
+        if((gVarSegSizeRead + gVarCurrFileSegSize[gVarCurrFileSegIndex])>gVarMaxNumberOfBlock)
+        {
+          while(gVarSegSizeRead<gVarMaxNumberOfBlock)
+          { 
+            size = dllReadHexFileUserData(gHandle,gVarDrvFileHandle[gVarCurrFileIndex],gVarFileLineDataBuff);
+            if(0xFFFFFFFF == size)
+            {
+              /*write Error Info*/
+              break;
+            }
+            gVarSegSizeRead = gVarSegSizeRead+size;
+            gVarCurrFileSegSize[gVarCurrFileSegIndex] -= size;
+            for(i = 0;i<size;i++)
+            {
+              gVarReadFileBuffer[gVarEndIndex] = gVarFileLineDataBuff[i];
+              gVarEndIndex++;
+            }
+          }
+
+          
+          DiagRequest_TransData(gVarReadFileBuffer,gVarMaxNumberOfBlock);
+          
+          gVarSegSizeRead = gVarSegSizeRead - gVarMaxNumberOfBlock;
+          
+          if(gVarSegSizeRead>0)
+          {
+            for(i = 0;i<gVarSegSizeRead;i++)
+            {  
+              gVarReadFileBuffer[i] = gVarReadFileBuffer[gVarMaxNumberOfBlock+i]; 
+            }
+          }
+        }
+        else
+        {
+          while(gVarCurrFileSegSize[gVarCurrFileSegIndex] != 0)
+          {
+            size = dllReadHexFileUserData(gHandle,gVarDrvFileHandle[gVarCurrFileIndex],gVarFileLineDataBuff);
+            if(0xFFFFFFFF == size)
+            {
+              /*write Error Info*/
+              break;
+            }
+            gVarSegSizeRead = gVarSegSizeRead+size;
+            gVarCurrFileSegSize[gVarCurrFileSegIndex] -= size;
+            for(i = 0;i<size;i++)
+            {
+              gVarReadFileBuffer[gVarEndIndex] = gVarFileLineDataBuff[i];
+              gVarEndIndex++;
+            }
+          }
+          DiagRequest_TransData(gVarReadFileBuffer,gVarSegSizeRead);
+        }
+      }
+    break; 
+    case DownLoadSubRequestExit:
+      DiagRequest_TransDataExit();
+      
+    break; 
+      
+    case DownLoadSubSendCheckDriver:
+      DiagRequest_StartRoutineCheckDriver(0x0202);
+    break;  
+    default:
+      
+    break;
+  }
+}
+
+on timer DiagTP
+{
+  word countertp=0;
+ 
+  countertp++;
+
+  if(minit < 60)
+  {
+    second++;
+  
+    if(second == 60)
+    {
+      second = 0;
+      minit++;
+    }
+  
+    putValue(evVar_Lcd,minit+second/100);
+    
+    if((DownLoadState == SecurityAccessDelay)&&(gVarSecurityDelayleft != 0))
+    {
+      gVarSecurityDelayleft--;
+      putValueToControl("FBLPanel1","FBLInfo","Security access delay ,please wait...");
+      putValueToControl("FBLPanel1","FBLInfo",gVarSecurityDelayleft);
+      putValueToControl("FBLPanel1","FBLInfo","\n");
+    }
+  }
+  
+  if(countertp == 4)
+  {
+    countertp=0;
+    output(tpmsg);
+  }
+}
+on start
+{
+  dllInit(gHandle);
+  openPanel("FBLPanel1");
+  OsekTl_Config();
+  
+  gVarFBLSt = FBL_STATE_UNSTART;
+  //StartButtenclikTime = 0;
+  //StopButtenclikTime = 0;
+  //CalculateCrcButtenTime = 0;
+  ButtenClickedTime = 0;
+  //IniFileHandle = openFileRead(pathInfo,1);
+  IniFileHandle = openFileRead(InifileDriver0,1); 
+  //write("IniFileHandle = %lx",IniFilePath);
+  if(0 != getProfileString("FileConfig","DriverFilePath0","",IniFilePath,elCount(IniFilePath),InifileDriver0))
+  {
+    write("DrvFilePath0:%s",IniFilePath);
+    putvalue(enVar_DrvFile0,IniFilePath);
+  }
+  fileClose(IniFileHandle);
+  
+  IniFileHandle = openFileRead(InifileData0,1);
+  if(0 != getProfileString("FileConfig","DataFilePath0","",IniFilePath,elCount(IniFilePath),InifileData0))
+  {
+    write("DataFilePath0:%s",IniFilePath);
+    putvalue(enVar_DataFile0,IniFilePath);
+  }
+  fileClose(IniFileHandle);
+
+  IniFileHandle = openFileRead(InifileCrcCal,1);
+  if(0 != getProfileString("FileConfig","CrcCalFilePath","",IniFilePath,elCount(IniFilePath),InifileCrcCal))
+  {
+    write("CrcCalFilePath:%s",IniFilePath);
+    putvalue(enVar_FileCrcCal,IniFilePath); 
+  }
+  fileClose(IniFileHandle);
+  
+  putvalue(enVar_CheckDrvFile0,1);
+  putvalue(enVar_CheckDataFile0,1);
+  //fileRewind(IniFileHandle);
+}
+
+on stopMeasurement
+{
+  /* This function will release the CAPL function 
+     handle in the CAPLDLL */
+  dllEnd(gHandle);
+}
+void OsekTl_Config(void)
+{
+    OSEKTL_SetNrmlMode();
+    OSEKTL_SetBS(0);
+    OSEKTL_UseBSOfFC();
+    OSEKTL_UseSTminOfFC();
+    OSEKTL_SetDLC8();
+    OSEKTL_SetEvalOneFC();
+    OSEKTL_SetUseFC(1);
+    OSEKTL_Set0Padding();
+    OSEKTL_Set0Pattern(0x00);
+    OSEKTL_SetRxId(gVarDiagRespID);
+    OSEKTL_Set2003Ext(1);
+}
+
+
+on envVar enVar_DataFile0
+{
+  write("datafile0 open ing-----");
+}
+on envVar enVar_CalculateCrcButton
+{
+  byte  crcBuff[4];
+  word i;
+  dword FileHandleTemp;
+  dword SegNum;
+  dword Crc32Value[1];
+  
+  if(FBL_STATE_START == gVarFBLSt)
+  {
+    return;
+  }
+  
+  ButtenClickedTime++;
+  
+  if(ButtenClickedTime != 2)
+  {
+    return;
+  }
+
+  ButtenClickedTime = 0;
+
+  for(i = 0;i<512;i++)
+  {
+    FileInfoTemp[i] = '\0';
+    FilePathTemp[i] = '\0';
+  }
+  for(i = 0;i<64;i++)
+  {
+    FileNameTemp[i] = '\0';
+  }
+/*
+  for(i = 0;i<LINECHARNUM;i++)
+  {
+    //gLineChar[i] = '\0'; no use?
+  }
+*/
+  NumOfdatafile = 0;
+
+  for(i=0;i<NUMBER_OF_DRV_FILES;i++)
+  {
+    gVarDrvFileHandle[i] = 0;
+    gVarDrvFileSegNum[i] = 0;
+  }
+  for(i=0;i<NUMBER_OF_DAT_FILES;i++)
+  {
+    gVarDatFileHandle[i] = 0;
+    gVarDatFileSegNum[i] = 0;
+  }
+  
+  /******************************  Driver File 0  ******************************/
+  FilePathDeep = getvalue(enVar_FileCrcCal,FileInfoTemp);
+  
+  
+  if((0 == dllGetFilePathAndName(FilePathTemp,FileNameTemp,FileInfoTemp,FilePathDeep)))
+  {
+    IniFileHandle = openFileWrite(InifileCrcCal,1);
+    if(0 != IniFileHandle)
+    {
+      writeProfileString("FileConfig","CrcCalFilePath", FileInfoTemp,InifileCrcCal);
+    }
+    fileClose(IniFileHandle);
+    
+  
+    
+    setFilePath(FilePathTemp,0);
+
+    FileHandleTemp = openFileRead(FileNameTemp,1);
+    
+    if(FileHandleTemp !=0 )
+    {
+      SegNum = dllGetHexFileSegmentInformation(gHandle,FileHandleTemp,SegAddr,SegLen);
+      
+      if(SegNum != 0)
+      {
+        fileRewind(FileHandleTemp); 
+        i = 0;
+        while(0 != SegNum--)
+        {
+          i++;
+        }
+        if(0 == dllCalculateHexFileCRC32(gHandle,FileHandleTemp,Crc32Value))
+        {
+          //Crc32Value = dllGetTheFinalCrcValue();
+          crcBuff[3]=Crc32Value[0]>>24;
+          crcBuff[2]=Crc32Value[0]>>16;
+          crcBuff[1]=Crc32Value[0]>>8;
+          crcBuff[0]=Crc32Value[0]>>0;
+          putValue(enVar_OutpputCRC,crcBuff,4); // (5)
+        }
+        else
+        {
+          write ("Warning :Calculate CRC failed !!"); 
+        }
+      }
+      else
+      {
+        write ("Warning :  The input file is empty !!"); 
+      }
+      fileClose(FileHandleTemp);
+    }
+    else  
+    { 
+      write ("Warning :  Open file failed !!"); 
+    }
+  }
+  else
+  {
+    write ("Warning :  No File Input"); 
+  }
+
+}
+
+on envVar enVar_StartButten
+{
+  word i;
+  dword SegNum;
+
+ 
+  ButtenClickedTime++;
+  do
+  {
+    
+    if(ButtenClickedTime != 2)
+    {
+      break;
+    }
+    ButtenClickedTime = 0;
+    
+    if(FBL_STATE_UNSTART != gVarFBLSt)
+    {
+      break;
+    }
+    
+    for(i = 0;i<512;i++)
+    {
+      FileInfoTemp[i] = '\0';
+      FilePathTemp[i] = '\0';
+    }
+    for(i = 0;i<64;i++)
+    {
+      FileNameTemp[i] = '\0';
+    }
+/*
+    for(i = 0;i<LINECHARNUM;i++)
+    {
+      //gLineChar[i] = '\0';no use?
+    }
+*/
+    NumOfdatafile = 0;
+
+    for(i=0;i<NUMBER_OF_DRV_FILES;i++)
+    {
+      gVarDrvFileHandle[i] = 0;
+      gVarDrvFileSegNum[i] = 0;
+    }
+    for(i=0;i<NUMBER_OF_DAT_FILES;i++)
+    {
+      gVarDatFileHandle[i] = 0;
+      gVarDatFileSegNum[i] = 0;
+    }
+
+    for(i=0;i<DOWNLOADSEQUENCEDEEP;i++)
+    {
+      gVarDownLoadSequence[i] = DOWNLOAD_NOTHING;
+      gVarDownLoadFileIndex[i] = 0; 
+    }
+/*
+    if(AppFingerPrintLen != getValue(enVar_FingerPrintInfo,AppDataFinger))
+    {
+      putValueToControl("FBLPanel1","FBLInfo","Warning:The length of ApplicationDataFingerprintData in the ControlTab2 is MUST be ");
+      putValueToControl("FBLPanel1","FBLInfo",AppFingerPrintLen);
+      putValueToControl("FBLPanel1","FBLInfo"," bytes \n");
+      break;
+    }
+*/
+    /******************************  Driver File 0  ******************************/
+    FilePathDeep = getvalue(enVar_DrvFile0,FileInfoTemp);
+    
+    if((0 == dllGetFilePathAndName(FilePathTemp,FileNameTemp,FileInfoTemp,FilePathDeep))&&(getvalue(enVar_CheckDrvFile0)))
+    {
+      IniFileHandle = openFileWrite(InifileDriver0,1);
+      if(0 != IniFileHandle)
+      {
+        writeProfileString("FileConfig","DriverFilePath0", FileInfoTemp,InifileDriver0);
+      }
+      fileClose(IniFileHandle);
+      
+      i = 0;
+      while(FilePathTemp[i] != '\0')
+      {
+        gVarDrvFilePath[DRIVER_FILE0_INDEX][i] = FilePathTemp[i];
+        i = i+1;
+      }
+      i = 0;
+      while(FileNameTemp[i] != '\0')
+      {
+        gVarDrvFileName[DRIVER_FILE0_INDEX][i] = FileNameTemp[i];
+        i = i+1;
+      }
+      
+      /****************** Read Driver File0 start *********************/
+      setFilePath(FilePathTemp,0);
+
+      gVarDrvFileHandle[DRIVER_FILE0_INDEX] = openFileRead(FileNameTemp,1); 
+
+      if(gVarDrvFileHandle[DRIVER_FILE0_INDEX] !=0 )
+      {
+        gVarDrvFileSegNum[DRIVER_FILE0_INDEX] = dllGetHexFileSegmentInformation(gHandle,gVarDrvFileHandle[DRIVER_FILE0_INDEX],SegAddr,SegLen);
+        if(gVarDrvFileSegNum[DRIVER_FILE0_INDEX] == 0)
+        {
+          putValueToControl("FBLPanel1","FBLInfo","Warning:Flashdriver open failed!!\n");
+          break;
+        }
+        for(i = 0;i<64;i++)
+        {
+          gVarDrvFileSegAddr[DRIVER_FILE0_INDEX][i] = SegAddr[i];
+          gVarDrvFileSegSize[DRIVER_FILE0_INDEX][i] = SegLen[i];   
+        }
+        
+        fileRewind(gVarDrvFileHandle[DRIVER_FILE0_INDEX]); 
+        /*-----------write info start------------*/
+        SegNum = gVarDrvFileSegNum[DRIVER_FILE0_INDEX];
+        
+        i = 0;
+        while(0 != SegNum--)
+        {
+          write("DriverFile0: seg %d  StartAddress 0x%lX  Size 0x%lX", i,gVarDrvFileSegAddr[DRIVER_FILE0_INDEX][i],gVarDrvFileSegSize[DRIVER_FILE0_INDEX][i]);
+          i++;
+        }
+        /*-----------write info end--------------*/
+      }
+      else  
+      { 
+        putValueToControl("FBLPanel1","FBLInfo","Warning:Can NOT open the Flash Driver File \n");
+        break;
+      }
+      /****************** Read Driver File0 end *********************/
+    }
+    else
+    {
+      putValueToControl("FBLPanel1","FBLInfo","Warning:No Flash Driver File \n");
+      break;
+    }
+    /************************************************************************************/
+    /************************************************************************************/
+    
+    for(i = 0;i<512;i++)
+    {
+      FileInfoTemp[i] = '\0';
+      FilePathTemp[i] = '\0';
+    }
+    for(i = 0;i<64;i++)
+    {
+      FileNameTemp[i] = '\0';
+    }
+/*
+    for(i = 0;i<LINECHARNUM;i++)
+    {
+      //gLineChar[i] = '\0';no use?
+    }
+*/
+    FilePathDeep = getvalue(enVar_DataFile0,FileInfoTemp);
+    
+    if((0 == dllGetFilePathAndName(FilePathTemp,FileNameTemp,FileInfoTemp,FilePathDeep))&&(getvalue(enVar_CheckDataFile0)))
+    {
+      IniFileHandle = openFileWrite(InifileData0,1);
+      if(0 != IniFileHandle)
+      {
+        writeProfileString("FileConfig","DataFilePath0", FileInfoTemp,InifileData0);
+      }
+      fileClose(IniFileHandle);
+      
+      
+      i = 0;
+      while(FilePathTemp[i] != '\0')
+      {
+        gVarDatFilePath[DATA_FILE0_INDEX][i] = FilePathTemp[i];
+        i = i+1;
+      }
+      i = 0;
+      while(FileNameTemp[i] != '\0')
+      {
+        gVarDatFileName[DATA_FILE0_INDEX][i] = FileNameTemp[i];
+        i = i+1;
+      }
+      NumOfdatafile++;
+
+      /****************** Read Data File0 start *********************/
+      setFilePath(FilePathTemp,0);
+
+      gVarDatFileHandle[DATA_FILE0_INDEX] = openFileRead(FileNameTemp,1); 
+
+      if(gVarDatFileHandle[DATA_FILE0_INDEX] !=0 )
+      {
+        gVarDatFileSegNum[DATA_FILE0_INDEX] = dllGetHexFileSegmentInformation(gHandle,gVarDatFileHandle[DATA_FILE0_INDEX],SegAddr,SegLen);
+
+        if(gVarDatFileSegNum[DATA_FILE0_INDEX] == 0)
+        {
+          putValueToControl("FBLPanel1","FBLInfo","Warning:App file open failed!!\n");
+          break;
+        }
+        
+        for(i = 0;i<64;i++)
+        {
+          gVarDatFileSegAddr[DATA_FILE0_INDEX][i] = SegAddr[i];
+          gVarDatFileSegSize[DATA_FILE0_INDEX][i] = SegLen[i];   
+        }
+        
+        fileRewind(gVarDatFileHandle[DATA_FILE0_INDEX]); 
+
+        /*-----------write info start------------*/
+        SegNum = gVarDatFileSegNum[DATA_FILE0_INDEX];
+        i = 0;
+        while(0 != SegNum--)
+        {
+          write("DataFile0: seg %d  StartAddress 0x%lX  Size 0x%lX", i,gVarDatFileSegAddr[DATA_FILE0_INDEX][i],gVarDatFileSegSize[DATA_FILE0_INDEX][i]);
+          i++;
+        }
+        /*-----------write info end--------------*/
+      }
+      else  
+      { 
+        putValueToControl("FBLPanel1","FBLInfo","Warning:Can NOT open APP File \n");
+        break;
+      }
+      /****************** Read Data File0 end *********************/
+    }
+    else
+    {
+          //write("Data0 ReadERR");
+    }
+    /************************************************************************************/
+    for(i = 0;i<512;i++)
+    {
+      FileInfoTemp[i] = '\0';
+      FilePathTemp[i] = '\0';
+    }
+    for(i = 0;i<64;i++)
+    {
+      FileNameTemp[i] = '\0';
+    }
+/*
+    for(i = 0;i<LINECHARNUM;i++)
+    {
+      //gLineChar[i] = '\0';no use?
+    }
+*/
+    FilePathDeep = getvalue(enVar_DataFile1,FileInfoTemp);
+    
+    if((0 == dllGetFilePathAndName(FilePathTemp,FileNameTemp,FileInfoTemp,FilePathDeep))&&(getvalue(enVar_CheckDataFile1)))
+    {
+      i = 0;
+      while(FilePathTemp[i] != '\0')
+      {
+        gVarDatFilePath[DATA_FILE1_INDEX][i] = FilePathTemp[i];
+        i = i+1;
+      }
+      i = 0;
+      while(FileNameTemp[i] != '\0')
+      {
+        gVarDatFileName[DATA_FILE1_INDEX][i] = FileNameTemp[i];
+        i = i+1;
+      }
+      NumOfdatafile++;
+      /****************** Read Data File1 start *********************/
+      setFilePath(FilePathTemp,0);
+
+      gVarDatFileHandle[DATA_FILE1_INDEX] = openFileRead(FileNameTemp,1); 
+
+      if(gVarDatFileHandle[DATA_FILE1_INDEX] !=0 )
+      {
+        gVarDatFileSegNum[DATA_FILE1_INDEX] = dllGetHexFileSegmentInformation(gHandle,gVarDatFileHandle[DATA_FILE1_INDEX],SegAddr,SegLen);
+       
+        if(gVarDatFileSegNum[DATA_FILE1_INDEX] == 0)
+        {
+          putValueToControl("FBLPanel1","FBLInfo","Warning:App file open failed!!\n");
+          break;
+        }
+        
+        for(i = 0;i<64;i++)
+        {
+          gVarDatFileSegAddr[DATA_FILE1_INDEX][i] = SegAddr[i];
+          gVarDatFileSegSize[DATA_FILE1_INDEX][i] = SegLen[i];   
+        }
+        
+        fileRewind(gVarDatFileHandle[DATA_FILE1_INDEX]); 
+        /*-----------write info start------------*/
+        SegNum = gVarDatFileSegNum[DATA_FILE1_INDEX];
+        i = 0;
+        while(0 != SegNum--)
+        {
+          write("DataFile1: seg %d  StartAddress 0x%lX  Size 0x%lX", i,gVarDatFileSegAddr[DATA_FILE1_INDEX][i],gVarDatFileSegSize[DATA_FILE1_INDEX][i]);
+          i++;
+        }
+        /*-----------write info end--------------*/
+      }
+      else  
+      { 
+        putValueToControl("FBLPanel1","FBLInfo","Warning:Can NOT open APP File \n");
+        break;
+      }
+      /****************** Read Data File1 end *********************/
+    }
+    else
+    {
+
+    }
+    /************************************************************************************/
+   
+    if(NumOfdatafile == 0)
+    {
+      putValueToControl("FBLPanel1","FBLInfo","Warning:No App File \n");
+      break;
+    }
+    /*------------------------------ Init ------------------------------------*/
+    
+    FBLInit();
+    FBLStart();
+
+    write("+++StartButten+++ The data file Segment Num: %lx",gVarDrvFileSegNum[0]);
+    write("+++StartButten+++ The data file Segment Num: %lx",gVarDatFileSegNum[0]);
+    write("+++StartButten+++ The data file Segment Num: %lx",gVarDatFileSegNum[1]);
+    
+    
+    gVarDownLoadSequence[0] = DOWNLOAD_DRV;
+    gVarDownLoadSequence[1] = DOWNLOAD_DATA;
+    //gVarDownLoadSequence[2] = DOWNLOAD_DRV;
+    //gVarDownLoadSequence[3] = DOWNLOAD_DATA;
+    gVarDownLoadFileIndex[0] = DRIVER_FILE0_INDEX;
+    gVarDownLoadFileIndex[1] = DATA_FILE0_INDEX;
+    //gVarDownLoadFileIndex[2] = DRIVER_FILE0_INDEX;  
+    //gVarDownLoadFileIndex[3] = DATA_FILE1_INDEX;
+    /*------------------------------ Start download ------------------------------------*/
+    
+    GetTheTotleSizeTobeDownload();
+    
+  }while(0);
+
+  
+  
+}
+
+on envVar enVar_GetLocalTimeButton
+{
+
+  long copydata;
+  
+  ButtenClickedTime++;
+  
+  if(ButtenClickedTime != 2)
+  {
+    return;
+  }
+  ButtenClickedTime = 0;
+
+  
+  tm[0] = 0;
+  tm[1] = 0;  
+  tm[2] = 0;
+  tm[3] = 0;
+  tm[4] = 0;
+  tm[5] = 0;
+  tm[6] = 0;
+  tm[7] = 0;
+  tm[8] = 0;  
+
+  getLocalTime(tm);
+  
+  copydata = getValue(enVar_FingerPrintInfo,AppDataFinger);
+ 
+  if((tm[5]+1900-2000)>255)
+  {
+    AppDataFinger[0] = 255;
+  }
+  else
+  {
+    AppDataFinger[0] = tm[5]+1900-2000;
+  }
+  
+  AppDataFinger[1] = tm[4]+1;
+  AppDataFinger[2] = tm[3];
+    
+  if(copydata == AppFingerPrintLen)
+  {
+    putValue(enVar_FingerPrintInfo,AppDataFinger,AppFingerPrintLen);
+  }
+  else
+  {
+    putValue(enVar_FingerPrintInfo,AppDataFinger,3);
+  }
+}
+
+on envVar enVar_StopButten
+{
+  ButtenClickedTime++;
+  
+  if(ButtenClickedTime>=2)
+  {
+    ButtenClickedTime = 0;
+    FBLStop();
+    putValueToControl("FBLPanel1","FBLInfo","Stoped!!!\n");
+  }
+}
+void GetTheTotleSizeTobeDownload(void)
+{
+  word i,j;
+  
+  totlesize = 0;
+  downsize = 0;
+  for(i= 0;i<DOWNLOADSEQUENCEDEEP;i++)
+  {
+    if(gVarDownLoadSequence[i] == DOWNLOAD_DATA)
+    {
+      if(gVarDatFileHandle[gVarDownLoadFileIndex[i]] != 0)/*0:Error*/
+      {
+        for(j = 0;j<gVarDatFileSegNum[gVarDownLoadFileIndex[i]];j++)
+        {
+          totlesize += gVarDatFileSegSize[gVarDownLoadFileIndex[i]][j];
+        }
+      }
+    }
+    else if(gVarDownLoadSequence[i] == DOWNLOAD_DRV)
+    {
+      if(gVarDrvFileHandle[gVarDownLoadFileIndex[i]] != 0)/*0:Error*/
+      {
+        for(j = 0;j<gVarDrvFileSegNum[gVarDownLoadFileIndex[i]];j++)
+        {
+          totlesize += gVarDrvFileSegSize[gVarDownLoadFileIndex[i]][j];
+        }
+      }
+    }
+    else
+    {
+      
+    }
+  }
+  write("The totleszie is f : %f",totlesize);
+}
+void CreatFingerPrint(void)
+{
+  //long copydata;
+  tm[0] = 0;
+  tm[1] = 0;  
+  tm[2] = 0;
+  tm[3] = 0;
+  tm[4] = 0;
+  tm[5] = 0;
+  tm[6] = 0;
+  tm[7] = 0;
+  tm[8] = 0;  
+
+  getLocalTime(tm);
+  
+  //copydata = getValue(enVar_FingerPrintInfo,AppDataFinger);
+  AppDataFinger[0] = 249;//Tool Supplier Identification
+  if((tm[5]+1900-2000)>255)
+  {
+    AppDataFinger[1] = 255;
+  }
+  else
+  {
+    AppDataFinger[1] = tm[5]+1900-2000;//Year
+  }
+  AppDataFinger[2] = tm[4]+1;//Month
+  AppDataFinger[3] = tm[3];  //Day
+  
+  /*Device Number*/ 
+  AppDataFinger[4] = 0;
+  AppDataFinger[5] = 0;
+  AppDataFinger[6] = 0;
+  AppDataFinger[7] = 0;
+  AppDataFinger[8] = 0;
+  AppDataFinger[9] = 0;
+  /*  
+  if(copydata == AppFingerPrintLen)
+  {
+    putValue(enVar_FingerPrintInfo,AppDataFinger,AppFingerPrintLen);
+  }
+  else
+  {
+    putValue(enVar_FingerPrintInfo,AppDataFinger,3);
+  }
+  */
+}
+
+void FBLInit(void)
+{
+  DownLoadState = 0;
+  WaitDataTxConf = 0;
+  WaitRespTimeoutCounter = 0;
+  SecurityAccessDelayCounter = 0;
+  gVarSecurityDelayleft = 0;
+  gVar_waitTimout = 0;
+  ButtenClickedTime = 0;
+  gSuppressPosRspBit = 0;
+  tpmsg.byte(0) = 0x02;  
+  tpmsg.byte(1) = 0x3E;
+  tpmsg.byte(2) = 0x80;
+  tpmsg.byte(3) = 0x00;
+  tpmsg.byte(4) = 0x00;
+  tpmsg.byte(5) = 0x00;
+  tpmsg.byte(6) = 0x00;
+  tpmsg.byte(7) = 0x00;
+  tpmsg.DlC = 8;
+  second=0;
+  minit=0;
+  
+  CRCTable_Init();
+}
+void FBLStart(void)
+{
+  putValue(evVar_Progress_Bar,0);
+  EnterNextState(SendReq_EnterExtendedSession);
+  setTimer(MainTaskTick,20);
+  setTimerCyclic(DiagTP,1000,1000);
+  putValue(evVar_Lcd,0);
+  gVarFBLSt = FBL_STATE_START;
+  //putValueToControl("FBLPanel1","FBLInfo","Loading file ...\n");
+  putValueToControl("FBLPanel1","FBLInfo","Starting...\n");
+}
+void FBLStop(void)
+{
+  if(gVarFBLSt != FBL_STATE_START)
+  {
+    return;
+  }
+  write("real stop!!");
+  canceltimer(MainTaskTick);
+  canceltimer(DownLoadFile);
+  canceltimer(TimeOutMonit);  
+  canceltimer(DiagTP);
+  gVarFBLSt = FBL_STATE_UNSTART;
+
+}
+void EnterNextState(word nextst)
+{
+  DownLoadState = nextst;
+}
+void SetNextState(word nextst)
+{
+  gVar_NextState = nextst;
+}
+word GetNextState(void)
+{
+  return gVar_NextState;
+}
+word GetDownLoadState(void)
+{
+  return DownLoadState;
+}
+
+void MainDownLoadMananger(void)
+{
+  word i;
+  //int cntea = 0;//test
+  if(FBL_STATE_START != gVarFBLSt)
+  {
+    return;
+  }
+  
+  switch(DownLoadState)
+  {
+    case SendReq_EnterExtendedSession:
+      DiagRequest_SessionControl(0x03);
+    break;
+      
+    case SendReq_SecurityReqSeed_LevelApp:
+      DiagRequest_SecurityAccess(0x1);
+    break;  
+      
+    case SendReq_SecuritySendKey_LevelApp:
+      DiagRequest_SecurityAccess(0x2);
+    break;  
+
+    case SendReq_SecurityReqSeed_LevelBT:
+      DiagRequest_SecurityAccess(0x09);
+    break;  
+      
+    case SendReq_SecuritySendKey_LevelBT:
+      DiagRequest_SecurityAccess(0x0A);
+    break; 
+      
+    case SendReq_ReadDID_0xF189:
+      if(REQUEST_OK != DiagRequest_ReadDataByDID(0xF189))
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed,ReadDID out of range\n");
+      }
+    break;
+      
+    case SendReq_ReadDID_0xF187:
+      if(REQUEST_OK != DiagRequest_ReadDataByDID(0xF187))
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed,ReadDID out of range\n");
+      }
+    break;
+    case SendReq_CheckPreCondication:
+      DiagRequest_StartRoutineCheckPreCondication(0x0203);
+    break;   
+    case SendReq_StopDtcSetting:  
+      DiagRequest_ControlDTCSetting(0x02);
+    break; 
+      
+    case SendReq_DisableCommunication:
+      DiagRequest_CommunicationControl(0x03,03);
+    break;
+      
+    case SendReq_EnterProgrammingSession:
+      putValueToControl("FBLPanel1","FBLInfo","Jumping to Bootloader...\n");
+      DiagRequest_SessionControl(0x02);
+    break;
+
+
+    case SecurityAccessDelay:  
+      
+      SecurityAccessDelayCounter++;
+      if(SecurityAccessDelayCounter>=(SECURITYDELAY/MainSchTick))
+      {
+        canceltimer(MainTaskTick);
+        //DiagnosticSecurityAccess_ReqProcess(0x21);
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+    break; 
+      
+    case SendReq_WriteFingerprint:
+       DiagRequest_WriteDataByDID(0xF184);
+    break; 
+
+    case SendReq_EraseMemory:
+       putValueToControl("FBLPanel1","FBLInfo","Erase flash memory...\n");
+       DiagRequest_EraseMemory(0xFF00);
+    break;
+      
+    case DetermineDownLoadFile:
+
+      //CrcValue = CRCInitValue; no use
+      
+      for(i= 0;i<DOWNLOADSEQUENCEDEEP;i++)
+      {
+        if(gVarDownLoadSequence[i] == DOWNLOAD_DATA)
+        {
+          gVarDownLoadSequence[i] = DOWNLOAD_NOTHING;
+          
+          if(gVarDatFileHandle[gVarDownLoadFileIndex[i]] != 0)/*0:Error*/
+          {
+            gVarCurrFileIndex = gVarDownLoadFileIndex[i];
+            gVarCurrFileType = DOWNLOAD_DATA;
+            
+            for(i = 0;i<gVarDatFileSegNum[gVarCurrFileIndex];i++)
+            {
+              gVarCurrFileSegSize[i] = gVarDatFileSegSize[gVarCurrFileIndex][i];
+            }
+            
+            fileRewind(gVarDatFileHandle[gVarCurrFileIndex]);
+            EnterNextState(SendReq_EraseMemory);
+            setTimer(MainTaskTick,20);
+            gVarCurrFileSegIndex = 0;
+            break;
+          }
+      
+        }
+        else if(gVarDownLoadSequence[i] == DOWNLOAD_DRV)
+        {
+          gVarDownLoadSequence[i] = DOWNLOAD_NOTHING;
+          
+          write("The %dth down file is Driver", i);
+          write("The driver file index : %lx",gVarDownLoadFileIndex[i]);
+          write("The driver file Handle: %lx",gVarDrvFileHandle[gVarDownLoadFileIndex[i]]);
+          
+          if(gVarDrvFileHandle[gVarDownLoadFileIndex[i]] != 0)/*0:Error*/
+          {
+            gVarCurrFileIndex = gVarDownLoadFileIndex[i];
+            gVarCurrFileType = DOWNLOAD_DRV;
+            
+            for(i = 0;i<gVarDrvFileSegNum[gVarCurrFileIndex];i++)
+            {
+              gVarCurrFileSegSize[i] = gVarDrvFileSegSize[gVarCurrFileIndex][i];
+            }
+            
+            fileRewind(gVarDrvFileHandle[gVarCurrFileIndex]);
+            
+            DownLoadSubSt = DownLoadSubReqDownload;
+            
+            EnterNextState(FileDownLoading);
+            
+            gVarCurrFileSegIndex = 0;
+            setTimer(DownLoadFile,20);
+            break;
+          }
+        }
+        else
+        {
+          
+        }
+      }
+      if(i == DOWNLOADSEQUENCEDEEP)
+      {
+        /*All file download Finish*/
+        putValueToControl("FBLPanel1","FBLInfo","Check Compatibility...\n");
+        DiagRequest_StartRoutineCheckCompatibility(0xFF01);//DFXK:相当于检查应用程序例程
+      }
+    break;
+    
+    case SendReq_ECUReset:
+      DiagRequest_ECURest(0x01);
+    break;
+    default:
+      
+    break;
+  }
+}
+   
+void FBLTransmitDataRequest(dword txid,word len)
+{
+  gVar_TxLength = len;
+  WaitDataTxConf = 1;
+  OSEKTL_SetTxId(txid);
+  OSEKTL_DataReq(gVarDatBuffTX,len);
+}
+
+word DiagRequest_SessionControl(byte subsid)
+{
+    word retVal;
+  
+    retVal = REQUEST_OK;
+  
+    gVarDatBuffTX[0] = 0x10;
+    gVarDatBuffTX[1] = subsid;
+  
+    switch(subsid&0x7F)
+    {
+      case 0x02:
+/*
+        if((subsid&0x80)!=0)
+        {
+          SetNextState(SecurityAccessDelay);
+          gVar_waitTimout = 1;
+        }
+*/
+        //EnterNextState(WaitRes_EnterProgrammingSession);
+        SetNextState(SendReq_SecurityReqSeed_LevelBT);
+        FBLTransmitDataRequest(gVarDiagPhyReqID,2);
+        
+      break;        
+      case 0x03:
+        if(gSuppressPosRspBit!=0)
+        {
+          gVarDatBuffTX[1] |= 0x80;
+          SetNextState(SendReq_StopDtcSetting);
+          gSuppressPosRspBit = 1;
+          gVar_waitTimout = 1;
+          FBLTransmitDataRequest(gVarDiagFunReqID,2);
+        }
+        else
+        {
+          SetNextState(SendReq_SecurityReqSeed_LevelApp);
+          //SetNextState(SendReq_ReadDID_0xF189);//for test
+          //EnterNextState(WaitRes_EnterExtendedSession);  
+          FBLTransmitDataRequest(gVarDiagPhyReqID,2);
+        }
+      break;  
+      default:
+        retVal = REQUEST_ERR;
+      break;
+    }
+    return retVal;
+}
+
+word DiagRequest_ControlDTCSetting(byte subsid)
+{
+    word retVal;
+  
+    retVal = REQUEST_OK;
+  
+    gVarDatBuffTX[0] = 0x85;
+    gVarDatBuffTX[1] = subsid;
+  
+    switch(subsid&0x7F)
+    {
+      case 0x02:
+        if(gSuppressPosRspBit!=0)
+        {
+          gVarDatBuffTX[1] |= 0x80;
+          SetNextState(SendReq_DisableCommunication);
+          gSuppressPosRspBit = 1;
+          gVar_waitTimout = 1;
+        }
+        FBLTransmitDataRequest(gVarDiagFunReqID,2);
+      break; 
+      default:
+        retVal = REQUEST_ERR;
+      break;
+    }
+    return retVal;
+}
+
+word DiagRequest_CommunicationControl(byte subsid,byte type)
+{
+    word retVal;
+  
+    retVal = REQUEST_OK;
+  
+    gVarDatBuffTX[0] = 0x28;
+    gVarDatBuffTX[1] = subsid;
+    gVarDatBuffTX[2] = type;
+    switch(subsid&0x7F)
+    {
+      case 0x03:
+        if(gSuppressPosRspBit!=0)
+        {
+          gVarDatBuffTX[1] |= 0x80;
+          SetNextState(SendReq_EnterProgrammingSession);
+          gSuppressPosRspBit = 0;
+          gVar_waitTimout = 1;
+        }
+        FBLTransmitDataRequest(gVarDiagFunReqID,3);
+      break; 
+      default:
+        retVal = REQUEST_ERR;
+      break;
+    }
+    return retVal;
+}
+
+word DiagRequest_SecurityAccess(byte subsid)
+{
+    word retVal;
+  
+    retVal = REQUEST_OK;
+  
+
+    switch(subsid&0x7F)
+    {
+      case 0x2:
+        gVarDatBuffTX[0] = 0x27;
+        gVarDatBuffTX[1] = subsid;
+        gVarDatBuffTX[2] = gVarKeyBuffTX[0];
+        gVarDatBuffTX[3] = gVarKeyBuffTX[1];
+        gVarDatBuffTX[4] = gVarKeyBuffTX[2];
+        gVarDatBuffTX[5] = gVarKeyBuffTX[3];
+        
+        SetNextState(SendReq_ReadDID_0xF189);
+        FBLTransmitDataRequest(gVarDiagPhyReqID,6);
+
+      break;
+      case 0x1:
+        gVarDatBuffTX[0] = 0x27;
+        gVarDatBuffTX[1] = subsid;
+        SetNextState(SendReq_SecuritySendKey_LevelApp);
+        FBLTransmitDataRequest(gVarDiagPhyReqID,2);
+      break; 
+      case 0x0A:
+        gVarDatBuffTX[0] = 0x27;
+        gVarDatBuffTX[1] = subsid;
+        gVarDatBuffTX[2] = gVarKeyBuffTX[0];
+        gVarDatBuffTX[3] = gVarKeyBuffTX[1];
+        gVarDatBuffTX[4] = gVarKeyBuffTX[2];
+        gVarDatBuffTX[5] = gVarKeyBuffTX[3];
+        
+        SetNextState(SendReq_WriteFingerprint);
+        FBLTransmitDataRequest(gVarDiagPhyReqID,6);
+      break;
+      case 0x09:
+        gVarDatBuffTX[0] = 0x27;
+        gVarDatBuffTX[1] = subsid;
+        SetNextState(SendReq_SecuritySendKey_LevelBT);
+        FBLTransmitDataRequest(gVarDiagPhyReqID,2);
+      break; 
+      default:
+        retVal = REQUEST_ERR;
+      break;
+    }
+    return retVal;
+}
+
+word DiagRequest_ReadDataByDID(word did)
+{
+  word retVal;
+  
+  retVal = REQUEST_OK;
+
+  gVarDatBuffTX[0] = 0x22;
+  gVarDatBuffTX[1] = did>>8;
+  gVarDatBuffTX[2] = did;
+  if(did == 0xF189)
+  {  
+    SetNextState(SendReq_ReadDID_0xF187);
+  }
+  else if(did == 0xF187)
+  {  
+    SetNextState(SendReq_CheckPreCondication);
+  }
+  else
+  {  
+    retVal = REQUEST_ERR;
+  }
+  FBLTransmitDataRequest(gVarDiagPhyReqID,3);
+
+  return retVal;
+}
+
+word DiagRequest_WriteDataByDID(word did)
+{
+    word retVal;
+  
+    retVal = REQUEST_OK;
+  
+
+    switch(did)
+    {
+      case 0xF184:
+/*
+        if(AppFingerPrintLen!=getValue(enVar_FingerPrintInfo,AppDataFinger))
+        {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!The length of ApplicationDataFingerprintData in the ControlTab2 is NOT ");
+            putValueToControl("FBLPanel1","FBLInfo",AppFingerPrintLen);
+            putValueToControl("FBLPanel1","FBLInfo"," bytes \n");
+        }
+        else
+*/
+        {
+            CreatFingerPrint();
+            gVarDatBuffTX[0] = 0x2E;
+            gVarDatBuffTX[1] = 0xF1;
+            gVarDatBuffTX[2] = 0x84;
+            gVarDatBuffTX[3] = AppDataFinger[0];
+            gVarDatBuffTX[4] = AppDataFinger[1];
+            gVarDatBuffTX[5] = AppDataFinger[2];
+            gVarDatBuffTX[6] = AppDataFinger[3];
+            gVarDatBuffTX[7] = AppDataFinger[4];
+            gVarDatBuffTX[8] = AppDataFinger[5];
+            gVarDatBuffTX[9] = AppDataFinger[6];
+            gVarDatBuffTX[10] = AppDataFinger[7];
+            gVarDatBuffTX[11] = AppDataFinger[8];
+            gVarDatBuffTX[12] = AppDataFinger[9];
+          
+            SetNextState(DetermineDownLoadFile);
+            FBLTransmitDataRequest(gVarDiagPhyReqID,13);
+        }
+
+      
+      break;
+      default:
+        retVal = REQUEST_ERR;
+      break;
+    }
+    return retVal;
+}
+
+void DiagRequest_RequestDownload(dword addr, dword size)
+{
+    gVarDatBuffTX[0] = 0x34;
+    gVarDatBuffTX[1] = 0;
+    gVarDatBuffTX[2] = 0x44;
+
+    gVarDatBuffTX[3] = (byte)(addr >> 24);
+    gVarDatBuffTX[4] = (byte)(addr >> 16);
+    gVarDatBuffTX[5] = (byte)(addr >> 8);
+    gVarDatBuffTX[6] = (byte)(addr >> 0);
+    gVarDatBuffTX[7] = (byte)(size >> 24);
+    gVarDatBuffTX[8] = (byte)(size >> 16);
+    gVarDatBuffTX[9] = (byte)(size >> 8);
+    gVarDatBuffTX[10] = (byte)(size);
+
+    FBLTransmitDataRequest(gVarDiagPhyReqID,11);
+}
+
+void DiagRequest_TransData(byte src[],dword len)
+{
+  dword i;
+  /*GenerateCrc32*/
+  //CRC_32_Value = dllGenerateCrc32(CRC_32_Value,src,len);
+  CRC_32_Value = GenerateCrc32_DFXK(CRC_32_Value,src,len);
+  gVarDatBuffTX[0]=0x36;
+  gVarDatBuffTX[1]=gVarTransDataSN;
+  for(i = 0;i<len;i++)
+  {
+    gVarDatBuffTX[2+i] = src[i];
+  }
+  downsize += len;
+  FBLTransmitDataRequest(gVarDiagPhyReqID,len+2);
+}
+
+void DiagRequest_TransDataExit(void)
+{
+  dword i;
+  
+  //CRC_32_Value ^= CRC_32_XOROT; 
+  CRC_32_Value = ~CRC_32_Value;//DFXK
+  gVarDatBuffTX[0]=0x37;
+  gVarDatBuffTX[1]=CRC_32_Value>>24;
+  gVarDatBuffTX[2]=CRC_32_Value>>16;
+  gVarDatBuffTX[3]=CRC_32_Value>>8;
+  gVarDatBuffTX[4]=CRC_32_Value>>0;
+  FBLTransmitDataRequest(gVarDiagPhyReqID,5);
+}
+
+void DiagRequest_EraseMemory(word did)
+{
+    dword startaddr;
+    dword endaddr;
+    dword filesize;
+    dword index1;
+    dword index2;
+
+    startaddr = gVarDatFileSegAddr[gVarCurrFileIndex][0];
+    index1 = gVarDatFileSegNum[gVarCurrFileIndex]-1;
+    endaddr = gVarDatFileSegAddr[gVarCurrFileIndex][index1] + gVarDatFileSegSize[gVarCurrFileIndex][index1] - 1;
+    filesize = endaddr - startaddr + 1;
+
+    gVarDatBuffTX[0] = 0x31;
+    gVarDatBuffTX[1] = 0x01;
+    gVarDatBuffTX[2] = did>>8;
+    gVarDatBuffTX[3] = did;
+    gVarDatBuffTX[4] = 0x44;  
+    gVarDatBuffTX[5] = (byte)(startaddr >> 24);
+    gVarDatBuffTX[6] = (byte)(startaddr >> 16);
+    gVarDatBuffTX[7] = (byte)(startaddr >> 8);
+    gVarDatBuffTX[8] = (byte)(startaddr);
+    gVarDatBuffTX[9] = (byte)(filesize >> 24);
+    gVarDatBuffTX[10] = (byte)(filesize >> 16);
+    gVarDatBuffTX[11] = (byte)(filesize >> 8);
+    gVarDatBuffTX[12] = (byte)(filesize);
+
+    //EnterNextState(WaitRes_EraseMemory);
+    FBLTransmitDataRequest(gVarDiagPhyReqID,13);
+}
+void DiagRequest_StartRoutineCheckDriver(word did)
+{
+    gVarDatBuffTX[0] = 0x31;
+    gVarDatBuffTX[1] = 0x01;
+    gVarDatBuffTX[2] = (byte)(did >> 8);
+    gVarDatBuffTX[3] = (byte)did;
+    gVarDatBuffTX[4] = 0xFF;
+    FBLTransmitDataRequest(gVarDiagPhyReqID,4);//DFXK: 长度为4 31 01 02 02
+}
+
+void DiagRequest_StartRoutineCheckPreCondication(word did)
+{
+    gVarDatBuffTX[0] = 0x31;
+    gVarDatBuffTX[1] = 0x01;
+    gVarDatBuffTX[2] = (byte)(did >> 8);
+    gVarDatBuffTX[3] = (byte)did;
+    gVarDatBuffTX[4] = 0xFF;
+    SetNextState(SendReq_EnterExtendedSession);
+    gSuppressPosRspBit = 1;
+    FBLTransmitDataRequest(gVarDiagPhyReqID,4);//DFXK: 长度为4 31 01 02 02
+}
+
+void DiagRequest_StartRoutineCheckCompatibility(word did)
+{
+    gVarDatBuffTX[0] = 0x31;
+    gVarDatBuffTX[1] = 0x01;
+    gVarDatBuffTX[2] = (byte)(did >> 8);
+    gVarDatBuffTX[3] = (byte)did;
+    gVarDatBuffTX[4] = 0xFF;
+
+    EnterNextState(SendReq_CheckCompatibility);// must EnterNex
+    FBLTransmitDataRequest(gVarDiagPhyReqID,4);//DFXK:长度为4
+}
+
+void DiagRequest_ECURest(byte sub)
+{
+
+  gVarDatBuffTX[0]=0x11;
+  gVarDatBuffTX[1]=sub;
+  //EnterNextState(WaitRes_ECUReset);
+  FBLTransmitDataRequest(gVarDiagPhyReqID,2);
+}
+word DiagResponse_SessionControl(byte subsid,long rxLength)
+{
+    word retVal;
+    
+    if((rxLength == 6)&&(gVarDatBuffRX[0] == 0x50) && (gVarDatBuffRX[1] == subsid)&& (gVarDatBuffRX[2] == 0)
+      && (gVarDatBuffRX[3] == 0x32)&& 1)
+    
+    //if((rxLength == 6)&&(gVarDatBuffRX[0] == 0x50) && (gVarDatBuffRX[1] == subsid)&& (gVarDatBuffRX[2] == 0)
+    //  && (gVarDatBuffRX[3] == 0x32)&& (gVarDatBuffRX[4] == 0x13)&& (gVarDatBuffRX[5] == 0x88))
+    {
+        retVal = RESOPNSE_OK;
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x10) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+word DiagResponse_ControlDTCSetting(byte subsid)
+{
+    word retVal;
+  
+    if((gVarDatBuffRX[0] == 0xc5)&&(gVarDatBuffRX[1] == subsid))
+    {
+        retVal = RESOPNSE_OK;
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x85) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_CommunicationControl(byte subsid)
+{
+    word retVal;
+  
+    if((gVarDatBuffRX[0] == 0x68)&&(gVarDatBuffRX[1] == subsid))
+    {
+        retVal = RESOPNSE_OK;
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x28) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_SecurityAccess(word subid,long len)
+{
+  word retVal;
+  byte seed[8];
+  byte keyL,keyH;
+  //dword key32;
+  //dword seed32;
+  byte i;
+  byte Seed[4];
+  byte Cal[4];
+  //byte Keyu[4];
+  byte Xor[4] = {0x83,0xBE,0x72,0xF9};
+
+  
+  
+  if((len == 3)&&(gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x27) && (gVarDatBuffRX[2] == 0x37))
+  {
+      retVal = RESOPNSE_SecNotExpire;
+  }
+  else if((len == 3)&&(gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x27) && (gVarDatBuffRX[2] == 0x78))
+  {
+      retVal = RESOPNSE_PENDING;
+  }
+  else if((len==6)&&(gVarDatBuffRX[0] == 0x67)&&(gVarDatBuffRX[1] == subid))
+  {
+    //seed32 = 0;
+    
+    //seed32 = (gVarDatBuffRX[2]<<24)|(gVarDatBuffRX[3]<<16)|(gVarDatBuffRX[4]<<8)|(gVarDatBuffRX[5]<<0);
+
+    //key32 = dllSeed2Key(seed32,0x101A8F3B);
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    Seed[0] = gVarDatBuffRX[2];
+    Seed[1] = gVarDatBuffRX[3];
+    Seed[2] = gVarDatBuffRX[4];
+    Seed[3] = gVarDatBuffRX[5];
+    for(i = 0;i < 4; i ++)
+    {
+      Cal[i] = Seed[i] ^ Xor[i];
+    }
+    if(subid == 0x09)//BT Level
+    {
+      gVarKeyBuffTX[0] = ((Cal[0] & 0x0F) << 4) | (Cal[1] & 0x0F);  
+      gVarKeyBuffTX[1] = ((Cal[1] & 0xF0) >> 4) | ((Cal[2] & 0x0F) << 4);  
+      gVarKeyBuffTX[2] = ((Cal[2] & 0xF0) >> 4) | (Cal[3] & 0xF0) ;  
+      gVarKeyBuffTX[3] =  (Cal[3] & 0x0F)| ((Cal[0] & 0xF0)>>4);
+    }
+    
+    if(subid == 0x01)
+    {
+      gVarKeyBuffTX[0] = ((Cal[0] & 0x0F) << 4) | (Cal[1] & 0xF0);  
+      gVarKeyBuffTX[1] = ((Cal[1] & 0x0F) << 4) | ((Cal[2] & 0xF0) >> 4);  
+      gVarKeyBuffTX[2] = (Cal[2] & 0xF0) | ((Cal[3] & 0xF0) >> 4);  
+      gVarKeyBuffTX[3] = ((Cal[3] & 0x0F) << 4)| (Cal[0] & 0x0F);        
+    }
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
+   /* 
+    gVarKeyBuffTX[0] = key32>>24;
+    gVarKeyBuffTX[1] = key32>>16;
+    gVarKeyBuffTX[2] = key32>>8;
+    gVarKeyBuffTX[3] = key32>>0;
+   */
+    
+    retVal = RESOPNSE_OK;
+  }
+  else if((len==2)&&(gVarDatBuffRX[0] == 0x67)&&(gVarDatBuffRX[1] == subid))
+  {  
+      retVal = RESOPNSE_OK;
+  }
+  else
+  {
+      retVal = RESOPNSE_ERR;
+  }
+
+  return retVal;
+}
+
+
+
+word DiagResponse_ReadDataByDID(long len,word did)
+{
+    word retVal;
+    //word temp;
+  
+    if((len == 3)&&(gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x22) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else if(((did == 0xF189)&&(len == 24)) || ((did == 0xF187)&&(len == 15)))
+    {
+      retVal = RESOPNSE_OK;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_WriteDataByDID(long len,word did)
+{
+    word retVal;
+    word temp;
+  
+    if((len == 3)&&(gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x2E) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else if((len==3)&&(gVarDatBuffRX[0] == 0x6E))
+    {
+        temp = 0;
+        
+        temp = ((gVarDatBuffRX[1]<<8) | gVarDatBuffRX[2]);
+      
+        if(temp == did)
+        {
+          retVal = RESOPNSE_OK;
+        }    
+        else
+        {
+          retVal = RESOPNSE_ERR;
+        }
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+
+word DiagResponse_RequestDownload(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+    if((rxlen == 4)&&(gVarDatBuffRX[0] == 0x74) && (gVarDatBuffRX[1] == 0x20))
+    {
+        format = gVarDatBuffRX[1]>>4;
+        gVarMaxNumberOfBlock = 0;
+        //gVarMaxNumberOfBlock |= gVarDatBuffRX[2]<<24;
+        //gVarMaxNumberOfBlock |= gVarDatBuffRX[3]<<16;
+        gVarMaxNumberOfBlock |= gVarDatBuffRX[2]<<8;
+        gVarMaxNumberOfBlock |= gVarDatBuffRX[3]<<0;
+      
+        if((gVarMaxNumberOfBlock > 2)&&(gVarMaxNumberOfBlock<1026))/*2014+2*/
+        {
+          retVal = RESOPNSE_OK;
+          gVarMaxNumberOfBlock = gVarMaxNumberOfBlock-2;
+        }
+        else
+        {
+          retVal = RESOPNSE_ERR;
+        }
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x34) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_TransData(long rxlen)
+{
+    word retVal;
+    byte format;
+
+    format = 0;
+  
+
+    if((rxlen == 2) && (gVarDatBuffRX[0] == 0x76) && (gVarDatBuffRX[1] == gVarTransDataSN))
+    {
+        retVal = RESOPNSE_OK;
+  
+        putValue(evVar_Progress_Bar,((downsize/totlesize)*100));
+        if(gVarCurrFileType == DOWNLOAD_DATA)
+        {
+          if(gVarCurrFileSegSize[gVarCurrFileSegIndex] == 0)
+          {
+            DownLoadSubSt = DownLoadSubRequestExit;
+            
+          }
+          else
+          {
+
+          }
+          setTimer(DownLoadFile,20);
+        }
+        if(gVarCurrFileType == DOWNLOAD_DRV)
+        {
+          if(gVarCurrFileSegSize[gVarCurrFileSegIndex] == 0)
+          {
+            DownLoadSubSt = DownLoadSubRequestExit;
+          }
+          else
+          {
+            
+          }
+          setTimer(DownLoadFile,20);
+        }
+        
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x36) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_TransDataExit(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+  
+    if((rxlen == 5) && (gVarDatBuffRX[0] == 0x77))
+    {
+        if((((CRC_32_Value>>24)&0xFF) == gVarDatBuffRX[1])&&(((CRC_32_Value>>16)&0xFF) == gVarDatBuffRX[2])&&(((CRC_32_Value>>8)&0xFF) == gVarDatBuffRX[3])&&(((CRC_32_Value>>0)&0xFF) == gVarDatBuffRX[4]))
+        {
+          retVal = RESOPNSE_OK;
+          if(gVarCurrFileType == DOWNLOAD_DATA)
+          {
+              gVarCurrFileSegIndex++;
+              if(gVarCurrFileSegIndex == gVarDatFileSegNum[gVarCurrFileIndex])
+              {
+                EnterNextState(DetermineDownLoadFile);
+                setTimer(MainTaskTick,20);
+                write("DOWNLOAD_DATA: %lx is over",gVarCurrFileIndex);
+              }
+              else
+              {
+                DownLoadSubSt = DownLoadSubReqDownload;
+                setTimer(DownLoadFile,20);
+              }
+          }
+          if(gVarCurrFileType == DOWNLOAD_DRV)
+          {
+              gVarCurrFileSegIndex++;
+              if(gVarCurrFileSegIndex == gVarDrvFileSegNum[gVarCurrFileIndex])
+              {
+                DownLoadSubSt = DownLoadSubSendCheckDriver;
+                write("DOWNLOAD_Drv: %lx is over",gVarCurrFileIndex);
+              }
+              else
+              {
+                DownLoadSubSt = DownLoadSubReqDownload;
+              }
+              setTimer(DownLoadFile,20);
+          }
+        }
+        else
+        {
+          retVal = RESOPNSE_CHECKSUM_ERR;
+        }
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x37) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+
+word DiagResponse_EraseMemory(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+    if((rxlen == 5) && (gVarDatBuffRX[0] == 0x71) && (gVarDatBuffRX[1] == 01) && (gVarDatBuffRX[2] == 0xFF) && (gVarDatBuffRX[3] == 0)&&(gVarDatBuffRX[4] == 0))
+    {
+        retVal = RESOPNSE_OK; 
+        DownLoadSubSt = DownLoadSubReqDownload;
+        setTimer(DownLoadFile,20);
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x31) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_StartRoutineCheckDriver(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+    if((rxlen == 5) && (gVarDatBuffRX[0] == 0x71) && (gVarDatBuffRX[1] == 01) && (gVarDatBuffRX[2] == 0x02) && (gVarDatBuffRX[3] == 0x02) && (gVarDatBuffRX[4] == 0x00))
+    {
+        retVal = RESOPNSE_OK;
+        EnterNextState(DetermineDownLoadFile);
+        setTimer(MainTaskTick,20);
+    }
+    else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x31) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_StartRoutineCheckPreCondication(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+    if((rxlen == 5) && (gVarDatBuffRX[0] == 0x71) && (gVarDatBuffRX[1] == 01) && (gVarDatBuffRX[2] == 0x02) && (gVarDatBuffRX[3] == 0x03) && (gVarDatBuffRX[4] == 0x00))
+    {
+        retVal = RESOPNSE_OK;
+    }
+    else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x31) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+
+word DiagResponse_StartRoutineCheckCompatibility(long rxlen)
+{
+    word retVal;
+    byte format;
+    
+    format = 0;
+
+    if((rxlen == 5) && (gVarDatBuffRX[0] == 0x71) && (gVarDatBuffRX[1] == 01) && (gVarDatBuffRX[2] == 0xFF) && (gVarDatBuffRX[3] == 01))
+    {
+        if(gVarDatBuffRX[4] == 0)// DFXK： Check Pass
+        {        
+          EnterNextState(SendReq_ECUReset);
+          setTimer(MainTaskTick,20);
+          retVal = RESOPNSE_OK;
+        }
+        else if(gVarDatBuffRX[4] == 1)
+        {
+          retVal = RESOPNSE_APP_INCOMPLETE;//DFXK：Program Imcomplete
+        }
+        else
+        {
+          retVal = RESOPNSE_APP_INVALID;//DFXK
+        }
+    }
+    else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x31) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+
+word DiagResponse_ECURest(long rxlen)
+{
+    word retVal;
+  
+    if((rxlen == 2) && (gVarDatBuffRX[0] == 0x51) && (gVarDatBuffRX[1] == 01))
+    {
+        retVal = RESOPNSE_OK;
+        putValueToControl("FBLPanel1","FBLInfo","Successful !!!\n");
+        FBLStop();
+    }
+	  else if ((gVarDatBuffRX[0] == 0x7F) && (gVarDatBuffRX[1] == 0x11) && (gVarDatBuffRX[2] == 0x78))
+    {
+        retVal = RESOPNSE_PENDING;
+    }
+    else
+    {
+        retVal = RESOPNSE_ERR;
+    }
+
+    return retVal;
+}
+OSEKTL_DataInd( long rxLength)
+{
+  word r;
+  
+  if((FBL_STATE_START != gVarFBLSt)||(WaitDataTxConf == 1))
+  {
+    return;
+  }
+  
+  canceltimer(TimeOutMonit);
+  gVar_waitTimout = 0;  
+ 
+  /* Get the received data */
+  OSEKTL_GetRxData(gVarDatBuffRX,rxLength);
+  switch(DownLoadState)
+  {
+    case SendReq_EnterExtendedSession:  
+
+      r = DiagResponse_SessionControl(0x03,rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!ExtendedSessionControl Negative Response\n");
+      }
+    break;
+      
+    case SendReq_SecurityReqSeed_LevelApp:
+      r = DiagResponse_SecurityAccess(0x01,rxLength);
+      if(r == RESOPNSE_SecNotExpire)
+      {
+        SetNextState(SendReq_SecurityReqSeed_LevelApp);
+        EnterNextState(SecurityAccessDelay);//直接进入延时
+        SecurityAccessDelayCounter = 0;
+        gVarSecurityDelayleft = SECURITYDELAY/1000;
+        putValueToControl("FBLPanel1","FBLInfo","Security access delay Level App,please wait...");
+        putValueToControl("FBLPanel1","FBLInfo",gVarSecurityDelayleft);
+        putValueToControl("FBLPanel1","FBLInfo","\n");
+        setTimerCyclic(MainTaskTick,20,20);
+      }
+      else if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!SecurityRequestSeed Negative Response\n");
+      }
+    break;
+     
+    case SendReq_SecuritySendKey_LevelApp:
+
+      r = DiagResponse_SecurityAccess(0x02,rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!SecuritySendKey Level App Negative Response\n");
+      }
+    break; 
+
+    case SendReq_SecurityReqSeed_LevelBT:
+      r = DiagResponse_SecurityAccess(0x09,rxLength);
+      if(r == RESOPNSE_SecNotExpire)
+      {
+        SetNextState(SendReq_SecurityReqSeed_LevelBT);
+        EnterNextState(SecurityAccessDelay);//直接进入延时
+        SecurityAccessDelayCounter = 0;
+        gVarSecurityDelayleft = SECURITYDELAY/1000;
+        putValueToControl("FBLPanel1","FBLInfo","Security access delay Level BT,please wait...");
+        putValueToControl("FBLPanel1","FBLInfo",gVarSecurityDelayleft);
+        putValueToControl("FBLPanel1","FBLInfo","\n");
+        setTimerCyclic(MainTaskTick,20,20);
+      }
+      else if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!SecurityRequestSeed Negative Response\n");
+      }
+    break;
+     
+    case SendReq_SecuritySendKey_LevelBT:
+
+      r = DiagResponse_SecurityAccess(0x0A,rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!SecuritySendKey Level BT Negative Response\n");
+      }
+    break; 
+    case SendReq_ReadDID_0xF189:
+      r = DiagResponse_ReadDataByDID(rxLength,0xF189);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!Read 0xF189 Error \n");
+      }
+    break;
+    case SendReq_ReadDID_0xF187:
+      r = DiagResponse_ReadDataByDID(rxLength,0xF187);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!Read 0xF187 Error \n");
+      }
+    break;    
+      
+    case SendReq_CheckPreCondication:
+      r = DiagResponse_StartRoutineCheckPreCondication(rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!Check PreCondication Error \n");
+      }
+    break;
+      
+    case SendReq_StopDtcSetting:  
+
+      r = DiagResponse_ControlDTCSetting(0x02);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(SendReq_DisableCommunication);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!StopDtcSetting Negative Response\n");
+      }
+    break;
+    
+    case SendReq_DisableCommunication:
+      
+      r = DiagResponse_CommunicationControl(0x03);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(SendReq_EnterProgrammingSession);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!DisableCommunication Negative Response\n");
+      }
+    break;  
+    
+    case SendReq_EnterProgrammingSession:
+      r = DiagResponse_SessionControl(0x02,rxLength);
+      
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!ProgrammingSessionControl Negative Response\n");
+      }
+    break;
+    
+    case SendReq_WriteFingerprint:
+      r = DiagResponse_WriteDataByDID(rxLength,0xF184);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(gVar_NextState);
+        setTimer(MainTaskTick,20);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!WritFingerprint Negative Response\n");
+      }
+    break;
+    
+    case SendReq_EraseMemory:
+      r = DiagResponse_EraseMemory(rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        EnterNextState(FileDownLoading);
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!EraseMemory Negative Response\n");
+      }
+    break;
+      
+    case FileDownLoading:
+      
+      switch(DownLoadSubSt)
+      {
+        case DownLoadSubReqDownload:
+          
+          r = DiagResponse_RequestDownload(rxLength);
+          if(r == RESOPNSE_OK)
+          {
+            DownLoadSubSt = DownLoadSubTransData;
+            setTimer(DownLoadFile,20);
+          }
+          else if(r == RESOPNSE_PENDING)
+          {
+            //gVar_waitTimout = 0;
+            setTimer(TimeOutMonit,P2StarClient);
+          }
+          else
+          {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!RequestDownload Negative Response\n");
+          }
+          
+        break;  
+        case DownLoadSubTransData:
+          
+          r = DiagResponse_TransData(rxLength);
+          if(r == RESOPNSE_OK)
+          {
+            
+          }
+          else if(r == RESOPNSE_PENDING)
+          {
+            //gVar_waitTimout = 0;
+            setTimer(TimeOutMonit,P2StarClient);
+          }
+          else
+          {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!TransferData Negative Response\n");
+          }
+        break;  
+        case DownLoadSubRequestExit:
+            
+          r=DiagResponse_TransDataExit(rxLength);  
+          if(r == RESOPNSE_OK)
+          {
+            
+          }
+          else if(r == RESOPNSE_PENDING)
+          {
+            //gVar_waitTimout = 0;
+            setTimer(TimeOutMonit,P2StarClient);
+          }
+          else if(r == RESOPNSE_CHECKSUM_ERR)
+          {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!TransferExit CheckSum Error\n");
+          }
+          else
+          {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!TransferExit Negative Response or Resopnse format error\n");
+          }
+        break;  
+        case DownLoadSubSendCheckDriver:
+          
+          r=DiagResponse_StartRoutineCheckDriver(rxLength);
+          if(r == RESOPNSE_OK)
+          {
+            
+          }
+          else if(r == RESOPNSE_PENDING)
+          {
+            //gVar_waitTimout = 0;
+            setTimer(TimeOutMonit,P2StarClient);
+          }
+          else
+          {
+            FBLStop();
+            putValueToControl("FBLPanel1","FBLInfo","Failed!!!CheckDriver Error\n");
+          }
+        break;
+        default:
+          
+        break;
+      }
+      
+    break;
+      
+    case SendReq_CheckCompatibility:
+      r=DiagResponse_StartRoutineCheckCompatibility(rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!Compatibility Error\n");
+      }   
+    break;   
+      
+    case SendReq_ECUReset:
+      r = DiagResponse_ECURest(rxLength);
+      if(r == RESOPNSE_OK)
+      {
+        
+      }
+      else if(r == RESOPNSE_PENDING)
+      {
+        //gVar_waitTimout = 0;
+        setTimer(TimeOutMonit,P2StarClient);
+      }
+      else
+      {
+        FBLStop();
+        putValueToControl("FBLPanel1","FBLInfo","Failed!!!ECUReset Negative Response\n");
+      }   
+    break;    
+          
+
+    default:
+      
+    break;
+  } 
+}
+
+
+OSEKTL_DataCon(long txLength)
+{
+  if((FBL_STATE_START != gVarFBLSt)||(WaitDataTxConf != 1))
+  {
+    return;
+  }
+  
+  if(gVar_TxLength == txLength)
+  {
+    setTimer(TimeOutMonit,P2client);
+  }
+  else
+  {
+    FBLStop();
+    putValueToControl("FBLPanel1","FBLInfo","Failed,OSEKTL Tx Error \n");
+  }
+  
+  WaitDataTxConf = 0;
+}
+
+OSEKTL_ErrorInd(int error)
+{
+  if(FBL_STATE_START != gVarFBLSt)
+  {
+    return;
+  }
+  FBLStop();
+  putValueToControl("FBLPanel1","FBLInfo","Failed,OSEKTL Error\n");
+
+  
+  switch (error)
+  {
+    case 1:     writeDbgLevel(1,"Error (%d): Timeout while waiting for CF", error);     break;
+    case 2:     writeDbgLevel(1,"Error (%d): Timeout while waiting for FC", error);     break;
+    case 3:     writeDbgLevel(1,"Error (%d): Wrong Sequence Number",error);            break;
+    case 4:     writeDbgLevel(1,"Error (%d): TP_DLL busy",error);                      break;
+    case 5:     writeDbgLevel(1,"Error (%d): Unexpected PDU",error);                   break;
+    case 6:     writeDbgLevel(1,"Error (%d): Timeout while waiting for Tx-Ack",error); break;
+    case 7:     writeDbgLevel(1,"Error (%d): WFT Overrun",error);                      break;
+    case 8:     writeDbgLevel(1,"Error (%d): Buffer overflow",error); break;
+    case 9:     writeDbgLevel(1,"Error (%d): Wrong parameter",error);                      break;    
+    default:    writeDbgLevel(1,"Error (%d): unknown error",error);                    break;
+  }
+}
+
+dword CALLBACK_Cbk_fileGetString(char buff[], dword buffsize, dword fileHandle)
+{
+  return fileGetString(buff,buffsize,fileHandle);
+}
+
+dword GenerateCrc32_DFXK(dword old,byte src[],word len)
+{
+    word i;
+    dword new;
+  
+    new = old;
+    for (i = 0; i < len; i++)
+    {
+        new = Crc32Table[ (new & 0xff) ^ src[i] ] ^ (new >> 8);
+    }
+
+    return new;
+}
+
+void CRCTable_Init(void)
+{
+    //_Bzip2_InitTable();
+    word i,j;
+    dword crc;
+    for(i = 0;i<256;i++)
+    {
+        crc = i;
+        for(j = 0;j<8;j++)
+        {
+            if(crc & 1)
+            {
+                 crc = (crc>>1)^0xEDB88320;
+            }
+            else
+            {
+                crc = crc>>1;
+            }
+        }
+        Crc32Table[i] = crc;
+    }
+}
+
+
